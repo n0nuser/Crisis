@@ -108,10 +108,10 @@ No es muy productivo hacer todo el programa de seguido y corregir los errores al
 
   - Haced un pequeño programa al que se le pase los argumentos que se especifican en el enunciado. Imprimid los argumentos para depurar y considerad las opciones de error al meterlos. Una vez controlados, comentad la depuración e imprimid el número máximo de procesos, como dice el enunciado.
   - Poned al padre en un bucle infinito en el que duerma un segundo y cree un hijo. Para no desbordar el ordenador con procesos, controlad con una variable cuántos se han creado y no crear ninguno si el número total es superior al número máximo. Dejad a los hijos en pauses.
-  - Haced que el padre duerma un número de segundos al azar entre uno y cinco. Usad las funciones srand y rand. Hacedlo de modo que varíen los números al azar en cada ejecución.
-  - Sustituid la variable de control por un fichero. Tened cuidado, porque si no lo hacéis bien, no controlaréis los procesos creados y se os pueden descontrolar.
-  - Registrad SIGINT de modo que el padre imprima el mensaje de finalización si pulsáis CTRL-C.
-  - Haced que los hijos, al nacer impriman el mensaje de su PID. También registrad en ellos SIGINT de modo que impriman el mensaje con su PID al morir.
+    - Haced que el padre duerma un número de segundos al azar entre uno y cinco. Usad las funciones srand y rand. Hacedlo de modo que varíen los números al azar en cada ejecución.
+    - Sustituid la variable de control por un fichero. Tened cuidado, porque si no lo hacéis bien, no controlaréis los procesos creados y se os pueden descontrolar.
+    - Registrad SIGINT de modo que el padre imprima el mensaje de finalización si pulsáis CTRL-C.
+    - Haced que los hijos, al nacer impriman el mensaje de su PID. También registrad en ellos SIGINT de modo que impriman el mensaje con su PID al morir.
 - Programad ahora la muerte de los hijos.
   - Metedlos en un bucle infinito, haced que duerman al azar como el padre y echad otro número al azar para ver si mueren. Si tienen que morir, que se autoenvíen SIGTERM.
   - Registrad una manejadora para SIGTERM para los hijos para que decrementen el número de procesos del fichero e impriman su PID al morir.
