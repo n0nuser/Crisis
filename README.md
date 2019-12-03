@@ -53,15 +53,25 @@ Durante el período de funcionamiento de la práctica, los procesos estarán en 
 - En el caso de que la empresa muera, deben morir todos sus descendientes.
 - Si un proceso que ha decidido tener un hijo no puede hacerlo porque se superaría el máximo número de procesos permitidos, repite otra vez desde el punto primero.
 
+#### Matar hijos
+
 La manera más fácil de lograr que se mueran los descendientes es registrar la señal SIGTERM de modo que cuando se mata a un proceso con ella, antes de morir, envía señales SIGTERMs a sus descendientes.
+
 El proceso habrá tenido la precaución de guardar el PID de sus hijos cuando hizo fork para crearlos.
 
 En el fichero compartido se puede escribir el número de procesos vivos en la actualidad.
+
 Pero hay que tener cuidado con los problemas de concurrencia.
-Por ejemplo, al crear una filial, hay primero que comprobar que podemos y, de ser el caso, incrementar el número de empresas vivas. Puede ocurrir que, una vez hemos comprobado que podemos crear la empresa y antes de incrementar su número, nos quiten la CPU y otro proceso también cree otra empresa y resulte que sobrepasemos el número máximo.
+
+Por ejemplo, al crear una filial, hay primero que comprobar que podemos y, de ser el caso, incrementar el número de empresas vivas. 
+
+Puede ocurrir que, una vez hemos comprobado que podemos crear la empresa y antes de incrementar su número, nos quiten la CPU y otro proceso también cree otra empresa y resulte que sobrepasemos el número máximo.
+
 Para evitar esto, usaremos la llamada al sistema lockf para bloquear el fichero mientras trabajemos con él.
 
 El proceso padre escribirá, antes de tener ningún hijo el número máximo de procesos que se le ha pasado por línea de órdenes.
+
+#### Nacimiento hijos
 
 Cuando nace un proceso, nada más nacer, imprime en la salida estándar una V y su PID entre paréntesis y un salto de línea.
 Justo antes de morir, debe imprimir por la salida estándar una M y su PID entre paréntesis y un salto de línea.
@@ -74,9 +84,9 @@ Respetad este formato exactamente, pues es posible que se use un programa de cor
 
 Para que el buffer intermedio usado por printf no interfiera con la salida de los procesos, es importante usar write para la salida por pantalla en su lugar.
 
-_Finalización ordenada_
-La práctica acabará cuando el usuario pulse CTRL-C.
-Los procesos deben morir y el padre, una vez hayan muerto todos imprimirá la frase: "Programa acabado correctamente".
+__Finalización ordenada__:
+
+La práctica acabará cuando el usuario pulse CTRL-C. Los procesos deben morir y el padre, una vez hayan muerto todos imprimirá la frase: "Programa acabado correctamente".
 
 ## Restricciones
 
@@ -92,7 +102,10 @@ Consultad la entrada de la página web de la asignatura.
 
 ## Normas de presentación.
 
-- Las tareas que tiene que realizar el programa son variadas. Os recomendamos que vayáis programándolas y comprobándolas una a una. No es muy productivo hacer todo el programa de seguido y corregir los errores al final. El esquema que os recomendamos seguir para facilitaros la labor se os muestra a continuación:
+Las tareas que tiene que realizar el programa son variadas. Os recomendamos que vayáis programándolas y comprobándolas una a una. 
+
+No es muy productivo hacer todo el programa de seguido y corregir los errores al final. El esquema que os recomendamos seguir para facilitaros la labor se os muestra a continuación:
+
   - Haced un pequeño programa al que se le pase los argumentos que se especifican en el enunciado. Imprimid los argumentos para depurar y considerad las opciones de error al meterlos. Una vez controlados, comentad la depuración e imprimid el número máximo de procesos, como dice el enunciado.
   - Poned al padre en un bucle infinito en el que duerma un segundo y cree un hijo. Para no desbordar el ordenador con procesos, controlad con una variable cuántos se han creado y no crear ninguno si el número total es superior al número máximo. Dejad a los hijos en pauses.
   - Haced que el padre duerma un número de segundos al azar entre uno y cinco. Usad las funciones srand y rand. Hacedlo de modo que varíen los números al azar en cada ejecución.
