@@ -7,14 +7,15 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <signal.h>
-
-/* -------------------------- PROTOTIPOS ----------------------- */
+#include <stdbool.h>
+/* ------------------------------ PROTOTIPOS ------------------------------ */
   int isNumber(char number[]);
   void uso(char mensajes[],int MIN_PROCS,int MAX_PROCS);
   unsigned int dormir(unsigned int nsecs);
-  static void sig_alrm(int signo);
-  static void muerto(int signo);
-/* ------------------------------------------------------------- */
+  void sig_alrm(int signo);
+  void muerto(int signo);
+  void salir(int retorno);
+/* ------------------------------------------------------------------------ */
 
 /* ----------------------------------- */
   int main(int argc, char *argv[]){
@@ -25,9 +26,11 @@
   const int MAX_PROCS = 33;
   char velocidad[2][7] = {"normal", "veloz"};
   char mensajes[500];
-  pid_t return_child;
+  pid_t estado_retorno, child;
   int arg1;
+  FILE *file;
 
+  // COMPROBACIONES
   if(argc != 2){
     if(argc == 1){
       perror(" ERROR: no se ha recibido el argumento necesario. (Número de procesos)");
@@ -65,33 +68,43 @@
       }
     }
   }
-  int pid = getpid();
-  // Luego hay que hacer free()
-  pid_t *hijos = (pid_t *) malloc (arg1 * sizeof(pid_t));
-  //
-  printf("Soy el padre de todos PID: %d\n\n",pid);
-  for (int i = 0; i < arg1; i++) {
-    srand(time(NULL));
-    dormir(rand() % 5 + 1);
-    hijos[i] = fork();
-    return_child = wait(hijos[i]);
-    if (hijos[i] == -1){
-        //Si no se ha creado correctamente
-        perror("Fork() error ");
-        exit(1);
-    }
-    else if (hijos[i] ==  0) {
-      //Si se ha creado correctamente
-      printf("Soy un \e[1;32mhijo\e[0m (\e[1;32m%d\e[0m) y mi \e[1;31mpadre\e[0m es (\e[1;31m%d\e[0m).\n",getpid(),getppid());
-    }
-    else if (hijos[i] != 0){
-      if (signal(SIGCHLD, muerto)){
-        //Esto se ejecuta cuando se han muerto todos los hijos que había creado el padre original.
-        printf("Soy un \e[1;34mpadre\e[0m (\e[1;33m%d\e[0m) y mis hijos \e[1;32m↑\e[0m las han palmao todos.\n",getpid());
+
+  // PROGRAMA
+  signal(SIGINT,salir);
+  printf("Soy el padre de todos PID: %d\n\n",getpid());
+  int fd = open("limitador.tmp", O_RDWR | O_CREAT);
+  if(fd == -1) perror("Error al crear archivo: ");
+  do{
+    for (int i = 0; i < arg1; i++) {
+      srand(time(NULL));
+      dormir(rand() % 5 + 1);
+      child = fork();
+      if (child < 0){
+          //Hijo no se ha creado correctamente
+          perror("Fork() error ");
+          exit(1);
+        }
+      else if (child ==  0) {
+        //Hijo creado correctamente
+        printf("# [\e[1;32m%d\e[0m] HIJO DE [\e[1;33m%d\e[0m].\n",getpid(),getppid());
+        //AQUI TIENE QUE AUMENTAR EL NUMERO DE PROCESOS DEL FICHERO.
+        //El hijo termina
+        srand(time(NULL));
+        if((rand() % 2) == 0){printf("  Crea hijo.\n");}
+        else raise(SIGTERM);
       }
-    }
-  }
-} // Fin del main
+      else{
+        //Este es el proceso padre. Se llega aquí cuando sus hijos han muerto.
+        //Cuando un hijo muere, el padre haga un wait sin bloquearse.
+        wait(NULL);
+        printf("# [\e[1;31m%d\e[0m] HIJO DE [\e[1;33m%d\e[0m].\n",child,getpid());
+        //AQUÍ TIENE QUE DECREMENTAR EL NUMERO DE PROCESOS DEL FICHERO.
+        printf("\n~ [\e[1;33m%d\e[0m] PADRE\n\n",getpid());
+      }
+      wait(&estado_retorno); //Solo el padre espera
+    } // Fin del for
+  }while(1);
+}  // Fin del main
 
 /* ------------------------------------------------------------- */
   void uso(char mensajes[],int MIN_PROCS,int MAX_PROCS){
@@ -119,11 +132,11 @@
 }
 
 /*-----------------------------------*/
-  static void sig_alrm(int signo){}
+  void sig_alrm(int signo){}
 /*-----------------------------------*/
 
 /*----------------------------------------------*/
-  static void muerto(int signo){wait(NULL);}
+  void muerto(int signo){wait(NULL);}
 /*----------------------------------------------*/
 
 /* ---------------------------------------------- */
@@ -133,4 +146,13 @@
 	alarm(nsecs);
 	pause();
 	return(alarm(0));
+}
+
+/* ------------------------------------------------ */
+  void salir(int retorno) {
+/* ------------------------------------------------ */
+  char mensajes[37];
+  sprintf(mensajes,"\nPrograma acabado correctamente.\n");
+  if(write(1,mensajes,strlen(mensajes))==-1) perror("");
+  exit(0);
 }
