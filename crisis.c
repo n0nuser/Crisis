@@ -18,7 +18,6 @@
   void uso(char mensajes[],int MIN_PROCS,int MAX_PROCS);
   void salir(int retorno);
   void muerte_total(int retorno);
-  void muerte_hijo(int retorno);
 /* ------------------------------------------------------------------------ */
 
 /* ----------------------------------- */
@@ -33,13 +32,12 @@
   pid_t estado_retorno, child;
   const int arg1 = atoi(argv[1]);
   int modo;
-  FILE *file;
   //SIGACTIONS
   struct sigaction sigint,sigchild;
   sigint.sa_handler=muerte_total;
-  sigchild.sa_handler=muerte_hijo;
+  //sigchild.sa_handler=muerte_hijo;
   if(sigaction(SIGINT,&sigint,NULL)==-1) return -1;
-  if(sigaction(SIGCHLD,&sigchild,NULL)==-1) return -1;
+  //if(sigaction(SIGCHLD,&sigchild,NULL)==-1) return -1;
   //
 
   // COMPROBACIONES
@@ -91,12 +89,13 @@
   sprintf(mensajes,"Soy el padre de todos [%d]\n\n",pid_inicial);
   if(write(1,mensajes,strlen(mensajes))==-1) perror("");
   //// PARA QUE META UN 0
-  int contador1 = 0; //Para pasarlo a int
-  int fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
+  int contador1 = 0;
+  int fd = open("contador.txt", O_RDWR | O_CREAT);
   if(fd == -1) perror("Error al crear archivo: ");
-  if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: "); //Escribe un 0
+  if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: ");
+  lseek(fd,0,SEEK_SET);
   lockf(fd,F_LOCK,0);
-  if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
+  if (close(fd) < 0) perror("Error al cerrar el archivo");
   ////
   while(1){
     if(contador1 >= arg1){
@@ -105,28 +104,27 @@
         raise(SIGTERM);
         sprintf(mensajes,"\e[42m# -\e[0m ABRIR FICHERO DESPUÉS DE MATAR - PID: %d - CONTADOR = %d\n",getpid(),contador1);
         if(write(1,mensajes,strlen(mensajes))==-1) perror("");
-        //// FICHERO
-        fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
+        //// AL MATAR EL HIJO REDUCE EN UNO EL CONTADOR DEL FICHERO
+        fd = open("contador.txt", O_RDWR | O_CREAT);
         if(fd == -1) perror("Error al crear archivo: ");
         if (read(fd,&contador1,sizeof(contador1))==-1) perror("Error al leer el archivo: ");
         lseek(fd,0,SEEK_SET);
         contador1--;
-        if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: "); //Escribe un 0
+        if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: ");
         lseek(fd,0,SEEK_SET);
         lockf(fd,F_LOCK,0);
-        if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
+        if (close(fd) < 0) perror("Error al cerrar el archivo");
         ////////////
       }
     }
-    //// FICHERO
-    fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
+    //// LEE EL CONTADOR
+    fd = open("contador.txt", O_RDWR | O_CREAT);
     if(fd == -1) perror("Error al crear archivo: ");
     lseek(fd,0,SEEK_SET);
     lockf(fd,F_LOCK,0);
     if (read(fd,&contador1,sizeof(contador1))==-1) perror("Error al leer el archivo: ");
     if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
     ////////////
-    if(contador1 > 1) exit(0);
     for (contador1; contador1 < arg1;) {
       sprintf(mensajes,"   COMIENZA EL FOR\n");
       if(write(1,mensajes,strlen(mensajes))==-1) perror("");
@@ -145,16 +143,16 @@
         sprintf(mensajes,"V [\e[1;32m%d\e[0m] P [\e[1;33m%d\e[0m].\n",getpid(),getppid());
         if(write(1,mensajes,strlen(mensajes))==-1) perror("");
         if(getpid() != pid_inicial){
-          //// FICHERO
-          fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
+          //// AUMENTA EN UNO EL CONTADOR
+          fd = open("contador.txt", O_RDWR | O_CREAT);
           if(fd == -1) perror("Error al crear archivo: ");
           if (read(fd,&contador1,sizeof(contador1))==-1) perror("Error al leer el archivo: ");
           lseek(fd,0,SEEK_SET);
           contador1++;
-          if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: "); //Escribe un 0
+          if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: ");
           lseek(fd,0,SEEK_SET);
           lockf(fd,F_LOCK,0);
-          if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
+          if (close(fd) < 0) perror("Error al cerrar el archivo");
           ////////////
           sprintf(mensajes,"El contador vale %d cuando se crea el primer hijo después de que se abra el archivo, PID: %d\n",contador1,getpid());
           if(write(1,mensajes,strlen(mensajes))==-1) perror("");
@@ -183,13 +181,27 @@
           }
           sprintf(mensajes, "El contador vale %d cuando el proceso se muere, PID: %d\n",contador1,getpid());
           if(write(1,mensajes,strlen(mensajes))==-1) perror("");
-          sprintf(mensajes,"V [\e[1;35m%d\e[0m] P [\e[1;36m%d\e[0m].\n",getpid(),getppid());
+          sprintf(mensajes,"V [\e[1;35m%d\e[0m] P [\e[1;36m%d\e[0m].\n",child,getpid());
           if(write(1,mensajes,strlen(mensajes))==-1) perror("");
         }
       }
       else{
         //Este es el proceso padre. Se llega aquí cuando sus hijos han muerto.
         wait(NULL);
+        //AQUI PUEDE HABER LUGAR A CONFUSION
+        sprintf(mensajes,"V [\e[1;31m%d\e[0m] P [\e[1;33m%d\e[0m].\n",child,getpid());//EL HIJO ES UN HIJOFRUTA
+        if(write(1,mensajes,strlen(mensajes))==-1) perror("");
+        //// FICHERO
+        int fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
+        if(fd == -1) perror("Error al crear archivo: ");
+        contador1--;
+        if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: "); //Escribe un 0
+        lseek(fd,0,SEEK_SET);
+        lockf(fd,F_LOCK,0);
+        if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
+        ////////////
+        sprintf(mensajes,"\nP [\e[1;33m%d\e[0m]\n\n",getpid());
+        if(write(1,mensajes,strlen(mensajes))==-1) perror("");
         //AQUI SALTA LA MANEJADORA DEL SIGCHILD
       }
       //Cuando un hijo muere, el padre haga un wait sin bloquearse.
@@ -236,25 +248,4 @@
       if(write(1,mensajes,strlen(mensajes))==-1) perror("");
       exit(0);
     }
-  }
-
-
-/*-----------------------------------*/
-  void muerte_hijo(int retorno){
-/*-----------------------------------*/
-    char mensajes[37];
-    int contador1;
-    //AQUI PUEDE HABER LUGAR A CONFUSION
-    sprintf(mensajes,"V [\e[1;31m%d\e[0m] P [\e[1;33m%d\e[0m].\n",getpid(),getppid());//EL HIJO ES UN HIJOFRUTA
-    if(write(1,mensajes,strlen(mensajes))==-1) perror("");
-    //// FICHERO
-    int fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
-    if(fd == -1) perror("Error al crear archivo: ");
-    if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: "); //Escribe un 0
-    lseek(fd,0,SEEK_SET);
-    lockf(fd,F_LOCK,0);
-    if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
-    ////////////
-    sprintf(mensajes,"\nP [\e[1;33m%d\e[0m]\n\n",getpid());
-    if(write(1,mensajes,strlen(mensajes))==-1) perror("");
   }
