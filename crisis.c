@@ -166,23 +166,6 @@
         else{
           //Aquí para cuando muera
           raise(SIGTERM);
-          if(getpid() != pid_inicial){
-            //// FICHERO
-            fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
-            if(fd == -1) perror("Error al crear archivo: ");
-            if (read(fd,&contador1,sizeof(contador1))==-1) perror("Error al leer el archivo: ");
-            lseek(fd,0,SEEK_SET);
-            contador1--;
-            if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: "); //Escribe un 0
-            lseek(fd,0,SEEK_SET);
-            lockf(fd,F_LOCK,0);
-            if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
-            ////////////
-          }
-          sprintf(mensajes, "El contador vale %d cuando el proceso se muere, PID: %d\n",contador1,getpid());
-          if(write(1,mensajes,strlen(mensajes))==-1) perror("");
-          sprintf(mensajes,"V [\e[1;35m%d\e[0m] P [\e[1;36m%d\e[0m].\n",child,getpid());
-          if(write(1,mensajes,strlen(mensajes))==-1) perror("");
         }
       }
       else{
@@ -194,12 +177,15 @@
         //// FICHERO
         int fd = open("contador.txt", O_RDWR | O_CREAT); // Abrimos el archivo
         if(fd == -1) perror("Error al crear archivo: ");
+        if (read(fd,&contador1,sizeof(contador1))==-1) perror("Error al leer el archivo: ");
+        lseek(fd,0,SEEK_SET);
         contador1--;
         if (write(fd,&contador1,sizeof(contador1))==-1) perror("Error al escribir en archivo: "); //Escribe un 0
         lseek(fd,0,SEEK_SET);
         lockf(fd,F_LOCK,0);
         if (close(fd) < 0) perror("Error al cerrar el archivo"); //Cierra el archivo
         ////////////
+        printf("El contador vale %d\n",contador1);
         sprintf(mensajes,"\nP [\e[1;33m%d\e[0m]\n\n",getpid());
         if(write(1,mensajes,strlen(mensajes))==-1) perror("");
         //AQUI SALTA LA MANEJADORA DEL SIGCHILD
