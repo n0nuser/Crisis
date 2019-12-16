@@ -8,7 +8,6 @@
 #include <sys/wait.h>
 #include <time.h>
 #include <signal.h>
-#include <stdbool.h>
 #include <fcntl.h>
 #define PID_BASH getpid()
 pid_t PIDS[33];
@@ -26,19 +25,17 @@ pid_t HIJO;
   int main(int argc, char *argv[]){
 /* ----------------------------------- */
   setlocale(LC_ALL, "spanish");
-  //VARIABILITAS
   const int MIN_PROCS = 3;
   const int MAX_PROCS = 33;
   char velocidad[2][7] = {"normal", "veloz"};
   char mensajes[300];
-  pid_t estado_retorno, child, HIJO;
+  pid_t child;
+  int estado_retorno;
   int modo,i,arg1;
   //SIGACTIONS
   struct sigaction sigint;
   sigint.sa_handler=muerte_total;
   if(sigaction(SIGINT,&sigint,NULL)==-1) return -1;
-  //SI MUERE UN HIJO SALTA EL SIGCHILD
-  //PARA QUE SE MUESTRE BIEN QUÉ HIJO HA MUERTO HAY QUE
 
   // COMPROBACIONES
   if (argc == 2 || argc == 3){
@@ -236,7 +233,7 @@ pid_t HIJO;
           //El proceso aquí ejecuta lo que sea.
         }
         else{
-          //Aquí para cuando muera
+          //Aquí para que muera
           raise(SIGTERM);
         }
       }
@@ -244,12 +241,9 @@ pid_t HIJO;
         //Este es el proceso padre. Se llega aquí cuando sus hijos han muerto.
         HIJO=child;
         wait(NULL);
-        //TODO LO DE muerte_hijo ES LO QUE VENÍA AQUÍ
         struct sigaction sigchild;
         sigchild.sa_handler=muerte_hijo;
         if(sigaction(SIGCHLD,&sigchild,NULL)==-1) return -1;
-        //sprintf(mensajes,"M [\e[1;31m%d\e[0m] P [\e[1;33m%d\e[0m].\n",HIJO,getpid());//EL HIJO ES UN HIJOFRUTA
-        //if(write(1,mensajes,strlen(mensajes))==-1) perror("");
       }
       //Cuando un hijo muere, el padre haga un wait sin bloquearse.
       wait(&estado_retorno); //Solo el padre espera
@@ -306,7 +300,7 @@ pid_t HIJO;
   	int status;
     char mensajes[200];
     int contador1;
-    sprintf(mensajes,"M [\e[1;31m%d\e[0m] P [\e[1;33m%d\e[0m].\n",HIJO,getpid());//EL HIJO ES UN HIJOFRUTA
+    sprintf(mensajes,"M [\e[1;31m%d\e[0m] P [\e[1;33m%d\e[0m].\n",HIJO,getpid());
     if(write(1,mensajes,strlen(mensajes))==-1) perror("");
     //// FICHERO
     int fd = open("contador.txt", O_RDWR); // Abrimos el archivo
