@@ -1,5 +1,11 @@
 # Crisis
 
+## Integrantes
+
+- Francisco Javier Gallego Lahera
+
+- Pablo Jesús González Rubio
+
 ## Enunciado.
 
 El programa que hay que presentar constará de un único fichero fuente de nombre `crisis.c`
